@@ -2,9 +2,11 @@
 
 import asyncio
 from typing import Any, Callable, Dict, List, Optional, Type, Union
+from dataclasses import dataclass
 
 from fastapi import FastAPI
-from mcp import Tool
+from mcp import Tool, Resource
+from mcp.types import Prompt
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from pydantic import BaseModel
@@ -12,20 +14,32 @@ from pydantic import BaseModel
 from lightmcp.exceptions import ToolRegistrationError
 
 
+@dataclass
 class ToolRegistration:
     """Container for tool registration details."""
+    func: Callable
+    name: str
+    description: str
+    input_model: Optional[Type[BaseModel]] = None
 
-    def __init__(
-        self,
-        func: Callable,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        input_model: Optional[Type[BaseModel]] = None,
-    ):
-        self.func = func
-        self.name = name or func.__name__
-        self.description = description or func.__doc__ or ""
-        self.input_model = input_model
+
+@dataclass
+class ResourceRegistration:
+    """Container for resource registration details."""
+    func: Callable
+    uri: str
+    name: str
+    description: str
+    mime_type: Optional[str] = None
+
+
+@dataclass 
+class PromptRegistration:
+    """Container for prompt registration details."""
+    func: Callable
+    name: str
+    description: str
+    arguments: List[dict]
 
 
 class LightMCP:
@@ -56,8 +70,10 @@ class LightMCP:
         # MCP server
         self._mcp_server = Server(name)
         
-        # Registry for tools
+        # Registry for tools, resources, and prompts
         self._tools: Dict[str, ToolRegistration] = {}
+        self._resources: Dict[str, ResourceRegistration] = {}
+        self._prompts: Dict[str, PromptRegistration] = {}
         
         # Setup MCP handlers
         self._setup_mcp_handlers()
@@ -101,6 +117,94 @@ class LightMCP:
             
             return result
 
+        @self._mcp_server.list_resources()
+        async def list_resources() -> List[Resource]:
+            """List all available MCP resources."""
+            resources = []
+            for resource_uri, registration in self._resources.items():
+                resources.append(
+                    Resource(
+                        uri=resource_uri,
+                        name=registration.name,
+                        description=registration.description,
+                        mimeType=registration.mime_type,
+                    )
+                )
+            return resources
+
+        @self._mcp_server.read_resource()
+        async def read_resource(uri: str) -> Dict[str, Any]:
+            """Read content of a specific resource."""
+            if uri not in self._resources:
+                raise ValueError(f"Unknown resource: {uri}")
+            
+            registration = self._resources[uri]
+            content = await registration.func()
+            
+            # Ensure content is properly formatted
+            if isinstance(content, dict):
+                import json
+                return {
+                    "contents": [
+                        {
+                            "uri": uri,
+                            "mimeType": registration.mime_type or "application/json",
+                            "text": json.dumps(content, indent=2)
+                        }
+                    ]
+                }
+            elif isinstance(content, str):
+                return {
+                    "contents": [
+                        {
+                            "uri": uri,
+                            "mimeType": registration.mime_type or "text/plain",
+                            "text": content
+                        }
+                    ]
+                }
+            else:
+                import json
+                return {
+                    "contents": [
+                        {
+                            "uri": uri,
+                            "mimeType": registration.mime_type or "application/json",
+                            "text": json.dumps(content, indent=2)
+                        }
+                    ]
+                }
+
+        @self._mcp_server.list_prompts()
+        async def list_prompts() -> List[Prompt]:
+            """List all available MCP prompts."""
+            prompts = []
+            for prompt_name, registration in self._prompts.items():
+                prompts.append(
+                    Prompt(
+                        name=prompt_name,
+                        description=registration.description,
+                        arguments=registration.arguments,
+                    )
+                )
+            return prompts
+
+        @self._mcp_server.get_prompt()
+        async def get_prompt(name: str, arguments: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            """Get prompt with optional arguments."""
+            if name not in self._prompts:
+                raise ValueError(f"Unknown prompt: {name}")
+            
+            registration = self._prompts[name]
+            
+            # Call the prompt function with arguments
+            if arguments:
+                result = await registration.func(**arguments)
+            else:
+                result = await registration.func()
+            
+            return result
+
     def tool(
         self,
         name: Optional[str] = None,
@@ -133,6 +237,84 @@ class LightMCP:
                 name=tool_name,
                 description=tool_description,
                 input_model=input_model,
+            )
+            
+            return func
+        
+        return decorator
+
+    def resource(
+        self,
+        uri: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        mime_type: Optional[str] = None,
+    ) -> Callable:
+        """
+        Decorator to register a function as an MCP resource.
+        
+        Args:
+            uri: Resource URI (defaults to function name with resource:// scheme)
+            name: Optional display name for the resource
+            description: Optional description of the resource
+            mime_type: MIME type of the resource content
+        """
+        def decorator(func: Callable) -> Callable:
+            resource_uri = uri or f"resource://{func.__name__}"
+            resource_name = name or func.__name__
+            resource_description = description or func.__doc__ or ""
+            
+            # Register the resource
+            self._resources[resource_uri] = ResourceRegistration(
+                func=func,
+                uri=resource_uri,
+                name=resource_name,
+                description=resource_description,
+                mime_type=mime_type,
+            )
+            
+            return func
+        
+        return decorator
+
+    def prompt(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        arguments: Optional[List[dict]] = None,
+    ) -> Callable:
+        """
+        Decorator to register a function as an MCP prompt.
+        
+        Args:
+            name: Prompt name (defaults to function name)
+            description: Optional description of the prompt
+            arguments: List of argument definitions for the prompt
+        """
+        def decorator(func: Callable) -> Callable:
+            prompt_name = name or func.__name__
+            prompt_description = description or func.__doc__ or ""
+            
+            # Extract arguments from function signature if not provided
+            prompt_arguments = arguments or []
+            if not prompt_arguments and hasattr(func, "__annotations__"):
+                import inspect
+                sig = inspect.signature(func)
+                for param_name, param in sig.parameters.items():
+                    if param_name != "return":
+                        arg_def = {
+                            "name": param_name,
+                            "description": f"Parameter {param_name}",
+                            "required": param.default == inspect.Parameter.empty
+                        }
+                        prompt_arguments.append(arg_def)
+            
+            # Register the prompt
+            self._prompts[prompt_name] = PromptRegistration(
+                func=func,
+                name=prompt_name,
+                description=prompt_description,
+                arguments=prompt_arguments,
             )
             
             return func
