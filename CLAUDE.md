@@ -1,55 +1,40 @@
 # LightMCP Project Memory
 
-## 🎯 PROJECT STATUS: **COMPLETE MCP PROTOCOL IMPLEMENTATION**
-**Version**: 2.0.0  
-**Status**: Full MCP specification implemented and validated  
+## PROJECT STATUS: Phase 2.1 - Advanced Resource Capabilities
+**Version**: 2.1.3  
 **Last Updated**: 2025-06-26  
 
-LightMCP is a **COMPLETE** FastAPI-inspired Python framework that enables developers to build full-featured Model Context Protocol (MCP) servers using familiar FastAPI patterns. The framework now supports the COMPLETE MCP protocol specification with Tools, Resources, and Prompts, all available through both HTTP REST APIs and native MCP protocols from the same codebase.
+LightMCP is a FastAPI-inspired Python framework for building Model Context Protocol (MCP) servers. The framework supports the complete MCP specification (Tools, Resources, Prompts) with dual-protocol exposure through both HTTP REST and native MCP.
 
-## ✅ CORE VALUE PROPOSITION - **FULLY DELIVERED**
-- **✅ Complete MCP Protocol**: Full support for Tools, Resources, and Prompts
-- **✅ Dual Protocol Support**: Single codebase that exposes both HTTP REST endpoints and MCP capabilities
-- **✅ Familiar Developer Experience**: Uses FastAPI-like decorators (`@app.tool()`, `@app.resource()`, `@app.prompt()`)
-- **✅ Production Ready**: Built-in validation, dependency injection, and error handling
-- **✅ MCP Native**: Handles JSON-RPC transport, session management, and complete MCP lifecycle automatically
+## Core Features
+- **Complete MCP Protocol**: Tools, Resources, and Prompts support
+- **Dual Protocol**: Single codebase exposes both HTTP REST and MCP
+- **FastAPI-like API**: Familiar decorators (`@app.tool()`, `@app.resource()`, `@app.prompt()`)
+- **Type Safety**: Pydantic validation, automatic schema generation
+- **Production Features**: Exception handling, streaming resources, binary content support
 
-## 🏗️ CURRENT IMPLEMENTATION STATUS
+## Current Implementation Status
 
-### ✅ **COMPLETED & WORKING**
-- **Complete MCP Framework**: `src/lightmcp/app.py` - Full MCP protocol implementation with Tools, Resources, and Prompts
-- **Exception Handling**: `src/lightmcp/exceptions.py` - Custom exception hierarchy
-- **Package Structure**: Modern Python packaging with pyproject.toml
-- **Type Safety**: Full Pydantic integration for validation across both protocols
-- **FastAPI Integration**: Seamless FastAPI app delegation for HTTP endpoints
-- **MCP Server Integration**: Official MCP Python SDK integration for complete protocol support
-- **Async Support**: Async-first design for concurrent request handling
-- **Resource Management**: URI-based resource serving with MIME type support
-- **Prompt Templates**: AI-assisted workflow templates with argument validation
+### Completed Components
+- **Core Framework** (`src/lightmcp/app.py`): LightMCP class with full MCP protocol support
+- **Exception System** (`src/lightmcp/exceptions.py`): Comprehensive error handling with context and recovery suggestions
+- **Type System**: Enhanced detection for container types (List[Model], Dict[str, Model], Union types)
+- **Binary Resources**: Base64 encoding for binary content, automatic MIME type detection
+- **Streaming Resources**: Chunked processing for large files and real-time data streams
+- **MCP Compatibility**: Fixed handler signatures and return formats (MCP 1.9.4)
 
-### ✅ **TESTING & VALIDATION**
-- **Unit Tests**: `tests/test_app.py` - Core functionality tests (6/6 passing)
-- **E2E HTTP Tests**: `tests/test_e2e_http.py` - Real HTTP server testing
-- **E2E MCP Tests**: `tests/test_e2e_mcp.py` - Real MCP tool testing
-- **Dual Protocol Tests**: `tests/test_e2e_dual_protocol.py` - Same function, both protocols
-- **Validation Tests**: `tests/test_validation_and_errors.py` - Pydantic validation testing
-- **Complete MCP Protocol Test**: `test_complete_mcp_protocol.py` - Full Tools/Resources/Prompts validation
-- **Live Servers**: Proven with running HTTP servers on ports 8009-8011
+### Test Coverage
+- All core tests passing (unit, E2E HTTP, E2E MCP, dual protocol, validation)
+- Binary resource handling validated
+- Streaming functionality tested with files, generators, and real-time data
+- MCP protocol compliance verified
 
-### ✅ **REAL-WORLD EXAMPLES**
-- **Basic Server**: `examples/basic_server.py` - Simple prediction service
-- **Developer Toolkit**: `examples/developer_toolkit.py` - Comprehensive development tools
-  - Project analysis (code metrics, complexity analysis)
-  - Git integration (status, diff, branch info)
-  - Test execution with result parsing
-  - Dependency checking and security scanning
-- **Complete MCP Example**: `examples/complete_mcp_example.py` - **FULL PROTOCOL DEMONSTRATION**
-  - **Tools**: Build, lint, and project status operations
-  - **Resources**: Configuration, metrics, and documentation access
-  - **Prompts**: Code review, optimization, and debugging templates
-  - **PROVEN**: All three MCP capabilities working with dual-protocol support
+### Examples
+- **Basic Server** (`examples/basic_server.py`): Simple prediction service
+- **Developer Toolkit** (`examples/developer_toolkit.py`): Git integration, code analysis, test execution
+- **Complete MCP Example** (`examples/complete_mcp_example.py`): Demonstrates all three MCP capabilities
 
-## 🔧 COMPLETE MCP ARCHITECTURE
+## Architecture Overview
 
 ```python
 from lightmcp import LightMCP
@@ -67,156 +52,128 @@ class TaskInput(BaseModel):
 async def create_task(task: TaskInput) -> dict:
     return {"id": 123, "title": task.title}
 
-# RESOURCES - Structured data access
-@app.resource(uri="config://app", description="App configuration")
-@app.get("/config")                     # ← ALSO available via HTTP
-async def get_config() -> dict:
-    return {"theme": "dark", "version": "2.0.0"}
+# RESOURCES - Structured data access (with streaming support)
+@app.resource(
+    uri="data://metrics", 
+    description="System metrics",
+    streaming=True,  # ← NEW: Enable streaming
+    chunk_size=1024
+)
+async def get_metrics() -> list:
+    return [{"timestamp": i, "cpu": i*10} for i in range(100)]
 
 # PROMPTS - AI interaction templates
-@app.prompt(description="Code review prompt", arguments=[
+@app.prompt(description="Code review", arguments=[
     {"name": "file_path", "required": True}
 ])
 async def review_prompt(file_path: str) -> dict:
     return {"messages": [{"role": "user", "content": f"Review {file_path}"}]}
-
-# COMPLETE MCP PROTOCOL - THREE CAPABILITIES, DUAL PROTOCOLS
 ```
 
-## 📊 **SUCCESS METRICS - EXCEEDED**
-- ✅ **80% Development Time Reduction**: Simple decorator patterns vs complex MCP setup
-- ✅ **FastAPI-level Developer Experience**: Familiar patterns, automatic validation
-- ✅ **Complete MCP Protocol**: Tools, Resources, and Prompts with schema generation, error handling, async support
-- ✅ **Universal Migration Path**: Can add `@app.tool()`, `@app.resource()`, `@app.prompt()` to existing FastAPI endpoints
-- ✅ **Production Validation**: Real servers tested with comprehensive test suites
-- ✅ **AI-First Design**: Native support for AI assistant workflows and interactions
+## Technical Details
 
-## 🛠️ TECHNICAL IMPLEMENTATION
+### Core Components
+- **LightMCP Class** (`src/lightmcp/app.py`): Main application with registries for tools, resources, and prompts
+- **StreamingResourceHandler**: Handles chunked file reading and data streaming
+- **Exception Hierarchy**: Custom exceptions with context and recovery suggestions
+- **Type Detection**: Enhanced support for container types and Pydantic models
 
-### **Core Components**
-- **LightMCP Class**: Main application class in `src/lightmcp/app.py`
-  - `_fastapi_app`: FastAPI instance for HTTP endpoints
-  - `_mcp_server`: MCP Server instance for complete protocol handling
-  - `_tools`: Registry mapping tool names to ToolRegistration objects
-  - `_resources`: Registry mapping URIs to ResourceRegistration objects
-  - `_prompts`: Registry mapping names to PromptRegistration objects
-  - `_setup_mcp_handlers()`: Configures all MCP protocol handlers
+### Key Features
+- **Enhanced Resource Registration**: Support for binary content, streaming, custom serializers
+- **MCP Handler Compatibility**: Fixed to work with MCP 1.9.4 (returns simple strings, not complex objects)
+- **Streaming Support**: Chunk-based processing for large files with configurable limits
+- **Binary Content**: Automatic base64 encoding for MCP transport
 
-### **Key Methods**
-- `@app.tool()`: Decorator to register MCP tools
-- `@app.resource()`: Decorator to register MCP resources with URI support
-- `@app.prompt()`: Decorator to register MCP prompt templates
-- `@app.get/post/put/delete()`: HTTP endpoint decorators (delegated to FastAPI)
-- `run_mcp()`: Start MCP server with stdio transport
-- `run_http()`: Start HTTP server with uvicorn
+### Dependencies
+- Python 3.11+ | FastAPI 0.115.13 | Pydantic 2.11.7 | MCP 1.9.4 | Uvicorn 0.34.3
 
-### **Dependencies & Stack**
-- **Python**: 3.11+ (tested with 3.12.3)
-- **FastAPI**: 0.115.13 (HTTP server, validation, OpenAPI)
-- **Pydantic**: 2.11.7 (type validation, schema generation)
-- **MCP**: 1.9.4 (official MCP Python SDK)
-- **Uvicorn**: 0.34.3 (ASGI server)
-- **httpx**: 0.28.1 (HTTP client for testing)
+## Known Issues and Limitations
 
-## 🧪 **COMPLETE PROTOCOL VALIDATION EVIDENCE**
+### MCP Library Compatibility
+- MCP 1.9.4 expects read_resource handlers to return simple strings, not complex objects
+- Workaround implemented: All content is JSON-serialized to strings
+- Future versions may support proper ReadResourceResult objects
 
-### **Tools Protocol Working**
-```bash
-$ curl http://localhost:8011/build -d '{"project_path": "/home/jt/LightMCP", "build_type": "development"}'
-{
-  "success": true,
-  "build_type": "development",
-  "duration_seconds": 2.34,
-  "output": "Build completed successfully"
-}
-```
+### Streaming Limitations
+- Async generators must be materialized to lists for MCP transport
+- Large files are chunked but still loaded into memory during processing
+- Real-time streaming requires polling rather than true push updates
 
-### **Resources Protocol Working**
-```bash
-$ curl http://localhost:8011/config/project
-{
-  "project": {"name": "Smart Development Assistant", "version": "2.0.0"},
-  "development": {"auto_lint": true, "build_on_commit": true}
-}
-```
+### Type Detection
+- Generic types beyond simple containers not fully supported
+- Complex nested unions may not validate correctly
+- Workaround: Use explicit Pydantic models for complex types
 
-### **MCP Protocol Complete**
-```python
-# Tools execution
-build_tool = app._tools["build_project"]
-result = await build_tool.func(build_request)
+## Development Roadmap
 
-# Resources access
-config_resource = app._resources["config://project/settings"]
-config = await config_resource.func()
+### Phase 1 - Core Robustness ✅ COMPLETED
+- [x] Comprehensive exception hierarchy with context and recovery suggestions
+- [x] Enhanced type detection for container types (List[Model], Dict[str, Model])
+- [x] URI validation and resource collision detection
+- [x] Graceful async error handling
 
-# Prompts generation
-review_prompt = app._prompts["code_review_checklist"]
-prompt = await review_prompt.func(file_path="app.py", change_type="feature")
-# ✅ All three MCP capabilities working identically via both protocols
-```
+### Phase 2.1 - Advanced Resource Capabilities (CURRENT)
+- [x] Binary content support with base64 encoding
+- [x] Streaming resources for large files and data generators
+- [x] MCP handler compatibility fixes
+- [ ] Custom serializers (XML, YAML, CSV, Protobuf) - **NEXT**
+- [ ] Resource versioning and caching strategies
 
-### **Validation Working**
-```bash
-$ curl -X POST http://localhost:8011/build -d '{"build_type": "invalid"}'  # Missing required field
-{"detail":[{"type":"missing","loc":["body","project_path"],"msg":"Field required"}]}
-```
+### Phase 2.2 - Enhanced Content Handling
+- [ ] MIME type negotiation
+- [ ] Content compression (gzip, brotli)
+- [ ] Multi-format responses
 
-## 🚀 **FUTURE DEVELOPMENT ROADMAP**
+### Phase 2.3 - Middleware Architecture
+- [ ] Request/response pipeline
+- [ ] Custom validation middleware
+- [ ] Plugin system
 
-### **Phase 1 - Production Enhancements** ✅ COMPLETED MCP PROTOCOL SUPPORT
-- [x] **Resources**: Add `@app.resource()` decorator for MCP resources
-- [x] **Prompts**: Add `@app.prompt()` decorator for MCP prompt templates  
-- [x] **Complete Protocol**: Full MCP specification implementation
-- [ ] **Enhanced Schemas**: Advanced input/output schema generation and validation
+### Phase 3 - Production Features
+- [ ] Structured logging and metrics
+- [ ] Authentication and rate limiting
+- [ ] Performance optimizations
 
-### **Phase 2 - Production Readiness**
-- [ ] **Middleware**: Request/response middleware system
-- [ ] **Authentication**: JWT/API key support for both protocols
-- [ ] **Rate Limiting**: Built-in rate limiting with protocol-aware policies
-- [ ] **Error Logging**: Structured logging with correlation IDs across protocols
-- [ ] **Monitoring**: Built-in metrics for Tools, Resources, and Prompts usage
+### Phase 4 - Developer Experience
+- [ ] CLI tools
+- [ ] Hot reload
+- [ ] IDE integration
 
-### **Phase 3 - Developer Experience**
-- [ ] **CLI Tool**: `lightmcp init`, `lightmcp run`, `lightmcp test`
-- [ ] **Hot Reload**: Development server with auto-reload for all three capabilities
-- [ ] **Testing Utilities**: Test helpers for Tools, Resources, and Prompts
-- [ ] **IDE Integration**: VS Code extension for LightMCP development
-- [ ] **Documentation Generator**: Auto-generate docs from MCP decorators
-
-## 🗂️ **PROJECT STRUCTURE**
+## Project Structure
 ```
 LightMCP/
-├── CLAUDE.md                           # This file - project memory
-├── README.md                           # User documentation
-├── pyproject.toml                      # Modern Python packaging
-├── src/lightmcp/                       # Main package
-│   ├── __init__.py                    # Package exports
-│   ├── app.py                         # Core LightMCP class ✅
-│   └── exceptions.py                  # Custom exceptions ✅
-├── examples/                           # Real-world examples
-│   ├── basic_server.py               # Simple prediction service ✅
-│   ├── developer_toolkit.py          # Comprehensive dev tools ✅
-│   └── complete_mcp_example.py       # Full MCP protocol demo ✅
-├── tests/                             # Comprehensive test suite
-│   ├── test_app.py                   # Unit tests ✅
-│   ├── test_e2e_http.py             # HTTP E2E tests ✅
-│   ├── test_e2e_mcp.py              # MCP E2E tests ✅
-│   ├── test_e2e_dual_protocol.py    # Dual protocol tests ✅
-│   └── test_validation_and_errors.py # Validation tests ✅
-├── test_complete_mcp_protocol.py      # Complete MCP protocol validation ✅
-├── venv/                              # Virtual environment
-└── *.log                             # Server logs showing real usage
+├── src/lightmcp/
+│   ├── app.py                    # Core LightMCP class with streaming support
+│   └── exceptions.py             # Comprehensive exception hierarchy
+├── examples/
+│   ├── basic_server.py          # Simple prediction service
+│   ├── developer_toolkit.py     # Git, code analysis, test execution
+│   └── complete_mcp_example.py  # Full protocol demonstration
+├── tests/                       # All core tests passing
+├── pyproject.toml              # Dependencies and package config
+└── CLAUDE.md                   # Project memory for AI assistants
 ```
 
-## 💡 **KEY INSIGHTS FOR FUTURE DEVELOPMENT**
+## Key Implementation Notes
 
-1. **Complete Architecture**: The triple decorator pattern (`@app.tool()`, `@app.resource()`, `@app.prompt()` + `@app.post()`) provides intuitive access to all MCP capabilities
-2. **Protocol Unification**: Seamless validation and functionality across HTTP REST and full MCP protocols with same models
-3. **AI-First Design**: Native support for AI assistant workflows through Tools, Resources, and Prompts
-4. **Production Scalability**: Async-first design handles concurrent requests across all protocol features effectively
-5. **Universal Migration Path**: Existing FastAPI code can easily add complete MCP support with simple decorators
-6. **Real-World Impact**: Comprehensive examples demonstrate practical value for development tools, AI assistants, and hybrid applications
+### MCP Handler Signatures
+The MCP library (1.9.4) expects specific handler signatures:
+- `read_resource(uri)` receives AnyUrl object, must return string
+- Tool handlers receive raw arguments dict
+- All content must be JSON-serializable
 
-## 🎉 **CONCLUSION**
-LightMCP **ACHIEVES COMPLETE MCP PROTOCOL IMPLEMENTATION**. The framework successfully delivers on its promise of FastAPI-inspired development experience while providing full MCP specification support. With Tools, Resources, and Prompts all working through dual protocols, LightMCP is ready for production use and represents a significant advancement in MCP server development. Ready for v2.0.0 release as the first complete MCP framework with dual-protocol support.
+### Streaming Implementation
+- Resources with `streaming=True` process data in chunks
+- File paths trigger automatic file streaming
+- Generators and iterables are materialized to lists
+- Results are JSON-serialized with chunk metadata
+
+### Type System Enhancement
+- Container types detected via `typing.get_origin()` and `get_args()`
+- Pydantic models in List[Model] and Dict[str, Model] are validated
+- Union types check each variant for Pydantic models
+
+### Testing Philosophy
+- No mocking - all tests verify real implementation
+- E2E tests run actual HTTP servers and MCP handlers
+- Streaming tested with real files and data generators

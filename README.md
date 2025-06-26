@@ -1,16 +1,16 @@
 # LightMCP
 
-A FastAPI-inspired framework for building complete Model Context Protocol (MCP) servers with familiar patterns and dual-protocol support. LightMCP provides the industry's first framework that implements the full MCP specification—Tools, Resources, and Prompts—while maintaining compatibility with standard HTTP REST APIs.
+A FastAPI-inspired framework for building Model Context Protocol (MCP) servers with familiar patterns and dual-protocol support. LightMCP implements the complete MCP specification (Tools, Resources, Prompts) while maintaining compatibility with HTTP REST APIs.
 
 ## Features
 
-- **Complete MCP Protocol**: Full support for Tools, Resources, and Prompts
-- **Dual Protocol Support**: Build services that expose both REST APIs and MCP capabilities from the same codebase  
-- **FastAPI-like Experience**: Use familiar decorators (`@app.tool()`, `@app.resource()`, `@app.prompt()`) and patterns
-- **Type Safety**: Full Pydantic integration for input/output validation across both protocols
-- **Async First**: Built on async/await for handling concurrent requests efficiently
-- **Production Ready**: Includes validation, error handling, transport management, and comprehensive testing
-- **AI-Native Design**: Purpose-built for AI assistant integrations and modern development workflows
+- **Complete MCP Protocol**: Tools, Resources, and Prompts support
+- **Dual Protocol**: Same codebase exposes both REST APIs and MCP capabilities
+- **FastAPI-like API**: Familiar decorators (`@app.tool()`, `@app.resource()`, `@app.prompt()`)
+- **Type Safety**: Pydantic validation and automatic schema generation
+- **Streaming Support**: Efficient handling of large files and real-time data
+- **Binary Content**: Automatic base64 encoding for images, PDFs, and other binary data
+- **Production Ready**: Comprehensive error handling, validation, and testing
 
 ## Quick Start
 
@@ -32,11 +32,15 @@ class TaskInput(BaseModel):
 async def create_task(task: TaskInput) -> dict:
     return {"id": 123, "title": task.title, "priority": task.priority}
 
-# RESOURCES - Structured data access  
-@app.resource(uri="config://app", description="Application configuration")
-@app.get("/config")  # Also available via HTTP REST
-async def get_config() -> dict:
-    return {"theme": "dark", "version": "1.0.0", "features": ["tools", "resources", "prompts"]}
+# RESOURCES - Structured data access (with streaming support)
+@app.resource(
+    uri="data://logs", 
+    description="System logs",
+    streaming=True,  # Enable streaming for large datasets
+    chunk_size=1024
+)
+async def get_logs() -> str:
+    return "/var/log/app.log"  # File path triggers automatic streaming
 
 # PROMPTS - AI workflow templates
 @app.prompt(description="Code review checklist generator")
@@ -55,10 +59,10 @@ if __name__ == "__main__":
 
 ### Key Benefits
 
-- **One Function, Multiple Protocols**: The same `create_task` function works as both an HTTP POST endpoint and an MCP tool
-- **Complete MCP Support**: Tools for operations, Resources for data access, Prompts for AI interactions
-- **Type Safety**: Pydantic models ensure validation across both HTTP and MCP protocols
-- **Familiar Patterns**: If you know FastAPI, you already know LightMCP
+- **Write Once, Deploy Everywhere**: Same function works as both HTTP endpoint and MCP capability
+- **Streaming by Default**: Handle large files and real-time data efficiently
+- **Type Safety**: Pydantic validation across both protocols
+- **Zero Learning Curve**: Uses FastAPI patterns you already know
 
 ## Installation
 
@@ -94,25 +98,11 @@ Your LightMCP server automatically supports both protocols. You can:
 
 ## Real-World Examples
 
-### Basic Server
-See `examples/basic_server.py` for a simple prediction service demonstrating:
-- Dual protocol endpoints
-- Input validation with Pydantic
-- Basic MCP tool functionality
+### Examples
 
-### Development Toolkit  
-See `examples/developer_toolkit.py` for a comprehensive development assistant with:
-- Project analysis tools
-- Git integration
-- Test execution
-- Dependency management
-
-### Complete MCP Protocol
-See `examples/complete_mcp_example.py` for full protocol demonstration:
-- **Tools**: Build, lint, and project operations
-- **Resources**: Configuration, metrics, and documentation
-- **Prompts**: Code review, optimization, and debugging workflows
-- All capabilities available through both HTTP and MCP protocols
+- **Basic Server** (`examples/basic_server.py`): Simple prediction service with validation
+- **Developer Toolkit** (`examples/developer_toolkit.py`): Git integration, code analysis, test execution
+- **Complete MCP Example** (`examples/complete_mcp_example.py`): All three MCP capabilities demonstrated
 
 ## API Reference
 
@@ -125,7 +115,12 @@ async def my_tool(input: PydanticModel) -> OutputType:
     pass
 
 # Resources - Structured data that AI assistants can read
-@app.resource(uri="scheme://identifier", description="Resource description", mime_type="application/json")
+@app.resource(
+    uri="scheme://identifier", 
+    description="Resource description",
+    streaming=True,  # Enable for large files
+    chunk_size=8192  # Bytes per chunk
+)
 async def my_resource() -> DataType:
     pass
 
@@ -182,17 +177,39 @@ mcp_server = app.mcp_server
 - Implement CI/CD integrations that work with AI assistants
 - Provide infrastructure APIs with AI-native interfaces
 
+## Advanced Features
+
+### Streaming Resources
+```python
+@app.resource(uri="data://large-file", streaming=True, chunk_size=1024)
+async def stream_large_file() -> str:
+    return "/path/to/large/file.log"  # Automatically streamed in chunks
+```
+
+### Binary Content
+```python
+@app.resource(uri="image://logo", mime_type="image/png")
+async def get_logo() -> bytes:
+    return b'\x89PNG\r\n\x1a\n...'  # Automatically base64 encoded for MCP
+```
+
+### Container Type Support
+```python
+@app.tool()
+async def process_items(items: List[ItemModel]) -> Dict[str, ResultModel]:
+    # Full validation for List[Model] and Dict[str, Model]
+    return {"processed": ResultModel(...)}
+```
+
 ## Architecture
 
-LightMCP implements a dual-protocol architecture where:
-
-1. **Single Function Definition**: Write your business logic once
-2. **Automatic Protocol Adaptation**: LightMCP handles HTTP REST and MCP protocol differences
-3. **Shared Validation**: Pydantic models work across both protocols
-4. **Unified Error Handling**: Consistent error responses in both protocols
-5. **Async Throughout**: Built on asyncio for maximum performance
-
-This approach reduces development time by up to 80% compared to building separate HTTP and MCP servers.
+LightMCP uses a dual-protocol architecture:
+- Single function definition for business logic
+- Automatic protocol adaptation (HTTP REST ↔ MCP)
+- Shared Pydantic validation
+- Unified error handling with context and recovery suggestions
+- Streaming support for large data
+- Async-first design
 
 ## Development and Testing
 

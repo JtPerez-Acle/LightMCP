@@ -275,7 +275,7 @@ async def test_pydantic_validation_mcp_valid_data(validation_server):
     class StrictUser(BaseModel):
         name: str = Field(..., min_length=2, max_length=50)
         age: int = Field(..., ge=0, le=150)
-        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
+        email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
         scores: List[float] = Field(default_factory=list)
         metadata: Optional[Dict[str, Any]] = None
         
@@ -312,7 +312,7 @@ async def test_pydantic_validation_mcp_invalid_data(validation_server):
     class StrictUser(BaseModel):
         name: str = Field(..., min_length=2, max_length=50)
         age: int = Field(..., ge=0, le=150)
-        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
+        email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
         scores: List[float] = Field(default_factory=list)
         metadata: Optional[Dict[str, Any]] = None
         
@@ -496,7 +496,7 @@ async def test_error_consistency_across_protocols(validation_server):
     class StrictUser(BaseModel):
         name: str = Field(..., min_length=2, max_length=50)
         age: int = Field(..., ge=0, le=150)
-        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
+        email: str = Field(..., pattern=r'^[^@]+@[^@]+\.[^@]+$')
         scores: List[float] = Field(default_factory=list)
         metadata: Optional[Dict[str, Any]] = None
         
