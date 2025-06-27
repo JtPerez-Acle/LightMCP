@@ -73,7 +73,7 @@ pip install lightmcp
 *Note: LightMCP is currently in development. Clone the repository and install in development mode:*
 
 ```bash
-git clone https://github.com/your-org/lightmcp
+git clone https://github.com/JtPerez-Acle/lightmcp
 cd lightmcp
 pip install -e ".[dev]"
 ```
