@@ -19,7 +19,7 @@ def test_tool_registration():
     """Test tool registration."""
     app = LightMCP()
     
-    @app.tool()
+    @app.tool(description="A test tool that returns success")
     async def test_tool():
         return {"result": "success"}
     
@@ -35,7 +35,7 @@ def test_tool_with_pydantic_model():
         value: str
         count: int = 1
     
-    @app.tool()
+    @app.tool(description="Process input with a Pydantic model")
     async def process_input(input: TestInput):
         return {"processed": input.value * input.count}
     
@@ -63,7 +63,7 @@ def test_dual_protocol_registration():
     class InputModel(BaseModel):
         text: str
     
-    @app.tool()
+    @app.tool(description="Process text input for both MCP and HTTP")
     @app.post("/process")
     async def process(input: InputModel):
         return {"result": input.text.upper()}

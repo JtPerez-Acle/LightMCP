@@ -262,8 +262,7 @@ async def test_http_query_parameters(http_server):
         # Test with query parameters that map to function parameters
         response = await client.post(
             f"{http_server}/process-text",
-            json="hello world",
-            params={"uppercase": "true"}
+            params={"text": "hello world", "uppercase": "true"}
         )
         
         assert response.status_code == 200
